@@ -16,7 +16,7 @@ class FfmpegConan(ConanFile):
     description = 'A cross-platform library for recording, converting, and streaming audio and video'
     source_dir = 'ffmpeg-%s' % source_version
     build_dir = '_build'
-    libs = ['avcodec', 'avdevice', 'avfilter', 'avformat', 'swresample', 'swscale']
+    libs = ['avcodec', 'avdevice', 'avfilter', 'avformat', 'avutil', 'swresample', 'swscale']
 
     def requirements(self):
         if platform.system() == 'Linux':
