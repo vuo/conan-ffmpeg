@@ -12,6 +12,12 @@ class FfmpegTestConan(ConanFile):
         self.copy('*', dst='lib', src='lib')
 
     def test(self):
+        libs = ['avcodec', 'avdevice', 'avfilter', 'avformat', 'swresample', 'swscale']
+        for f in libs:
+            self.run('otool -L "lib/lib%s.dylib"' % f)
+            self.run('echo %s rpath:' % f)
+            self.run('otool -l "lib/lib%s.dylib" | grep -A2 LC_RPATH | cut -d"(" -f1' % f)
+
         self.run('qbs run')
 
         # Ensure we only link to system libraries and our own libraries.
