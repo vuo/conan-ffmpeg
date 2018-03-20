@@ -9,7 +9,8 @@ class FfmpegConan(ConanFile):
     package_version = '1'
     version = '%s-%s' % (source_version, package_version)
 
-    requires = 'llvm/3.3-1@vuo/stable',
+    requires = 'llvm/3.3-1@vuo/stable', \
+        'openssl/1.0.2n-1@vuo/stable'
     settings = 'os', 'compiler', 'build_type', 'arch'
     url = 'http://www.ffmpeg.org/'
     license = 'http://www.ffmpeg.org/legal.html'
@@ -100,6 +101,7 @@ class FfmpegConan(ConanFile):
                                           '--enable-demuxer=mpegtsraw',
                                           '--disable-bsfs',
                                           '--disable-devices',
+                                          '--enable-openssl',
 
                                           # Avoid CPU features unsupported on some systems Vuo runs on
                                           '--disable-runtime-cpudetect',
