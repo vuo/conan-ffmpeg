@@ -10,7 +10,7 @@ class FfmpegConan(ConanFile):
     version = '%s-%s' % (source_version, package_version)
 
     requires = 'llvm/3.3-2@vuo/stable', \
-        'vuoutils/1.0@vuo/stable' \
+        'vuoutils/1.0@vuo/stable', \
         'openssl/1.0.2n-2@vuo/stable'
     settings = 'os', 'compiler', 'build_type', 'arch'
     url = 'http://www.ffmpeg.org/'
@@ -38,6 +38,8 @@ class FfmpegConan(ConanFile):
         tools.get('http://www.ffmpeg.org/releases/ffmpeg-%s.tar.bz2' % self.source_version,
                   sha256='926603fd974e9b38071a5cfc6fd0d93857801d1968145dfce7fdc627ab1d68df')
 
+        self.run('mv %s/LICENSE %s/%s.txt' % (self.source_dir, self.source_dir, self.name))
+
     def build(self):
         import VuoUtils
         tools.mkdir(self.build_dir)
@@ -49,12 +51,11 @@ class FfmpegConan(ConanFile):
             autotools.libs = []
 
             autotools.flags.append('-Oz')
-            autotools.flags.append('-arch x86_64')
-
-            autotools.link_flags.append('-arch x86_64')
 
             if platform.system() == 'Darwin':
+                autotools.flags.append('-arch x86_64')
                 autotools.flags.append('-mmacosx-version-min=10.10')
+                autotools.link_flags.append('-arch x86_64')
                 autotools.link_flags.append('-Wl,-headerpad_max_install_names')
                 autotools.link_flags.append('-Wl,-no_function_starts')
                 autotools.link_flags.append('-Wl,-no_version_load_command')
@@ -123,6 +124,8 @@ class FfmpegConan(ConanFile):
 
         for f in list(self.libs.keys()):
             self.copy('lib%s.%s' % (f, libext), src='%s/lib' % self.build_dir, dst='lib')
+
+        self.copy('%s.txt' % self.name, src=self.source_dir, dst='license')
 
     def package_info(self):
         self.cpp_info.libs = list(self.libs.keys())
