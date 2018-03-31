@@ -6,7 +6,7 @@ class FfmpegConan(ConanFile):
     name = 'ffmpeg'
 
     source_version = '2.1'
-    package_version = '1'
+    package_version = '2'
     version = '%s-%s' % (source_version, package_version)
 
     requires = 'llvm/3.3-1@vuo/stable', \
