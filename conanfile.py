@@ -30,7 +30,7 @@ class FfmpegConan(ConanFile):
 
     def requirements(self):
         if platform.system() == 'Linux':
-            self.requires('patchelf/0.9@vuo/stable')
+            self.requires('patchelf/0.10pre-1@vuo/stable')
         elif platform.system() != 'Darwin':
             raise Exception('Unknown platform "%s"' % platform.system())
 
@@ -50,15 +50,20 @@ class FfmpegConan(ConanFile):
             # but this package doesn't need to link with them.
             autotools.libs = []
 
-            autotools.flags.append('-Oz')
+            autotools.flags.append('-I%s/include' % self.deps_cpp_info['openssl'].rootpath)
+            autotools.link_flags.append('-L%s/lib' % self.deps_cpp_info['openssl'].rootpath)
 
             if platform.system() == 'Darwin':
+                autotools.flags.append('-Oz')
                 autotools.flags.append('-arch x86_64')
                 autotools.flags.append('-mmacosx-version-min=10.10')
                 autotools.link_flags.append('-arch x86_64')
                 autotools.link_flags.append('-Wl,-headerpad_max_install_names')
                 autotools.link_flags.append('-Wl,-no_function_starts')
                 autotools.link_flags.append('-Wl,-no_version_load_command')
+            elif platform.system() == 'Linux':
+                autotools.flags.append('-O4')
+                autotools.link_flags.append('-ldl')
 
             env_vars = {
                 'CC' : self.deps_cpp_info['llvm'].rootpath + '/bin/clang',
