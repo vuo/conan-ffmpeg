@@ -38,6 +38,13 @@ class FfmpegConan(ConanFile):
         tools.get('http://www.ffmpeg.org/releases/ffmpeg-%s.tar.bz2' % self.source_version,
                   sha256='926603fd974e9b38071a5cfc6fd0d93857801d1968145dfce7fdc627ab1d68df')
 
+        if platform.system() == 'Linux':
+            # Tell ./configure that it needs the dynamic linker in order to link with OpenSSL.
+            # (`autotools.libs.append('dl')` doesn't work because it appears before the OpenSSL libraries on the ./configure command line.)
+            tools.replace_in_file('%s/configure' % self.source_dir,
+                                  'enabled openssl           && { check_lib openssl/ssl.h SSL_library_init -lssl -lcrypto ||',
+                                  'enabled openssl           && { check_lib openssl/ssl.h SSL_library_init -lssl -lcrypto -ldl ||')
+
         self.run('mv %s/LICENSE %s/%s.txt' % (self.source_dir, self.source_dir, self.name))
 
     def build(self):
@@ -63,7 +70,6 @@ class FfmpegConan(ConanFile):
                 autotools.link_flags.append('-Wl,-no_version_load_command')
             elif platform.system() == 'Linux':
                 autotools.flags.append('-O4')
-                autotools.link_flags.append('-ldl')
 
             env_vars = {
                 'CC' : self.deps_cpp_info['llvm'].rootpath + '/bin/clang',
