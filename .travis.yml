@@ -40,5 +40,5 @@ install:
     - conan user
 
 script:
-    - conan create . vuo/stable
+    - conan create . vuo/stable ; cat /home/travis/.conan/data/ffmpeg/2.1-2/vuo/stable/build/644e22bff41ecf742275db411dce3a617349bcf2/_build/config.log
       && conan upload --remote vuo --all --confirm ffmpeg/*
