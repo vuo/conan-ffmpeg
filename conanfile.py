@@ -9,7 +9,7 @@ class FfmpegConan(ConanFile):
     package_version = '2'
     version = '%s-%s' % (source_version, package_version)
 
-    build_requires = 'llvm/3.3-5@vuo/stable' \
+    build_requires = 'llvm/3.3-5@vuo/stable', \
                      'vuoutils/1.0@vuo/stable'
     requires = 'openssl/1.0.2n-2@vuo/stable'
     settings = 'os', 'compiler', 'build_type', 'arch'
