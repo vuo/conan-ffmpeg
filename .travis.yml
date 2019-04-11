@@ -32,5 +32,6 @@ install:
     - conan user
 
 script:
-    - conan create . vuo/stable
+    - >
+      set -o pipefail ; conan create . vuo/stable 2>&1 | egrep -v --line-buffered 'indeo3data.*(warning: shifting|note: expanded from macro)| *(~*)? ?\^ ?~*'
       && conan upload --remote vuo --all --confirm ffmpeg/*
