@@ -27,6 +27,7 @@ class FfmpegConan(ConanFile):
         'swresample': 0,
         'swscale': 2,
     }
+    exports_sources = '*.patch'
 
     def requirements(self):
         if platform.system() == 'Linux':
@@ -38,12 +39,22 @@ class FfmpegConan(ConanFile):
         tools.get('http://www.ffmpeg.org/releases/ffmpeg-%s.tar.bz2' % self.source_version,
                   sha256='926603fd974e9b38071a5cfc6fd0d93857801d1968145dfce7fdc627ab1d68df')
 
+        # On both Linux and macOS, tell ./configure to check for the presence of OPENSSL_init_ssl
+        # (instead of the removed-in-openssl-1.1 SSL_library_init).
         if platform.system() == 'Linux':
             # Tell ./configure that it needs the dynamic linker in order to link with OpenSSL.
             # (`autotools.libs.append('dl')` doesn't work because it appears before the OpenSSL libraries on the ./configure command line.)
             tools.replace_in_file('%s/configure' % self.source_dir,
                                   'enabled openssl           && { check_lib openssl/ssl.h SSL_library_init -lssl -lcrypto ||',
-                                  'enabled openssl           && { check_lib openssl/ssl.h SSL_library_init -lssl -lcrypto -ldl ||')
+                                  'enabled openssl           && { check_lib openssl/ssl.h OPENSSL_init_ssl -lssl -lcrypto -ldl ||')
+        else:
+            tools.replace_in_file('%s/configure' % self.source_dir,
+                                  'enabled openssl           && { check_lib openssl/ssl.h SSL_library_init -lssl -lcrypto ||',
+                                  'enabled openssl           && { check_lib openssl/ssl.h OPENSSL_init_ssl -lssl -lcrypto ||')
+
+        # https://b33p.net/kosada/node/15280
+        # http://git.videolan.org/?p=ffmpeg.git;a=patch;h=016387fe0fe3eff1a03ec0673bf4d2967f6cad94
+        tools.patch(patch_file='016387fe0fe3eff1a03ec0673bf4d2967f6cad94.patch', base_path=self.source_dir)
 
         self.run('mv %s/LICENSE %s/%s.txt' % (self.source_dir, self.source_dir, self.name))
 
