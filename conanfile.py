@@ -63,6 +63,7 @@ class FfmpegConan(ConanFile):
             if platform.system() == 'Darwin':
                 autotools.flags.append('-Oz')
                 autotools.flags.append('-arch x86_64')
+                autotools.flags.append('-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk')
                 autotools.flags.append('-mmacosx-version-min=10.10')
                 autotools.link_flags.append('-arch x86_64')
                 autotools.link_flags.append('-Wl,-headerpad_max_install_names')

@@ -1,20 +1,22 @@
-from conans import ConanFile
+from conans import ConanFile, CMake
 import platform
 
 class FfmpegTestConan(ConanFile):
-    generators = 'qbs'
+    generators = 'cmake'
 
     requires = 'llvm/3.3-5@vuo/stable'
 
     def build(self):
-        self.run('qbs -f "%s"' % self.source_folder)
+        cmake = CMake(self)
+        cmake.configure()
+        cmake.build()
 
     def imports(self):
         self.copy('*', src='bin', dst='bin')
         self.copy('*', dst='lib', src='lib')
 
     def test(self):
-        self.run('qbs run -f "%s"' % self.source_folder)
+        self.run('./bin/test_package')
 
         # Ensure we only link to system libraries and our own libraries.
         if platform.system() == 'Darwin':
