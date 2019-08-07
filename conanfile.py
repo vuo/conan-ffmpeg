@@ -6,12 +6,12 @@ class FfmpegConan(ConanFile):
     name = 'ffmpeg'
 
     source_version = '2.1'
-    package_version = '4'
+    package_version = '5'
     version = '%s-%s' % (source_version, package_version)
 
     build_requires = 'llvm/3.3-5@vuo/stable', \
                      'vuoutils/1.0@vuo/stable'
-    requires = 'openssl/1.1.1b-1@vuo/stable'
+    requires = 'openssl/1.1.1c-0@vuo/stable'
     settings = 'os', 'compiler', 'build_type', 'arch'
     url = 'http://www.ffmpeg.org/'
     license = 'http://www.ffmpeg.org/legal.html'
