@@ -46,7 +46,7 @@ class FfmpegConan(ConanFile):
             # (`autotools.libs.append('dl')` doesn't work because it appears before the OpenSSL libraries on the ./configure command line.)
             tools.replace_in_file('%s/configure' % self.source_dir,
                                   '                               check_lib openssl openssl/ssl.h SSL_library_init -lssl -lcrypto ||',
-                                  '                               check_lib openssl openssl/ssl.h OPENSSL_init_ssl -lssl -lcrypto -ldl ||')
+                                  '                               check_lib openssl openssl/ssl.h OPENSSL_init_ssl -lssl -lcrypto -ldl -lpthread ||')
         else:
             tools.replace_in_file('%s/configure' % self.source_dir,
                                   '                               check_lib openssl openssl/ssl.h SSL_library_init -lssl -lcrypto ||',
