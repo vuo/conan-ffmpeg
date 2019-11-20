@@ -5,8 +5,8 @@ import platform
 class FfmpegConan(ConanFile):
     name = 'ffmpeg'
 
-    source_version = '2.1'
-    package_version = '5'
+    source_version = '4.2.1'
+    package_version = '0'
     version = '%s-%s' % (source_version, package_version)
 
     build_requires = 'llvm/3.3-5@vuo/stable', \
@@ -19,13 +19,13 @@ class FfmpegConan(ConanFile):
     source_dir = 'ffmpeg-%s' % source_version
     build_dir = '_build'
     libs = {
-        'avcodec': 55,
-        'avdevice': 55,
-        'avfilter': 3,
-        'avformat': 55,
-        'avutil': 52,
-        'swresample': 0,
-        'swscale': 2,
+        'avcodec': 58,
+        'avdevice': 58,
+        'avfilter': 7,
+        'avformat': 58,
+        'avutil': 56,
+        'swresample': 3,
+        'swscale': 5,
     }
     exports_sources = '*.patch'
 
@@ -37,7 +37,7 @@ class FfmpegConan(ConanFile):
 
     def source(self):
         tools.get('http://www.ffmpeg.org/releases/ffmpeg-%s.tar.bz2' % self.source_version,
-                  sha256='926603fd974e9b38071a5cfc6fd0d93857801d1968145dfce7fdc627ab1d68df')
+                  sha256='682a9fa3f6864d7f0dbf224f86b129e337bc60286e0d00dffcd710998d521624')
 
         # On both Linux and macOS, tell ./configure to check for the presence of OPENSSL_init_ssl
         # (instead of the removed-in-openssl-1.1 SSL_library_init).
@@ -45,18 +45,14 @@ class FfmpegConan(ConanFile):
             # Tell ./configure that it needs the dynamic linker in order to link with OpenSSL.
             # (`autotools.libs.append('dl')` doesn't work because it appears before the OpenSSL libraries on the ./configure command line.)
             tools.replace_in_file('%s/configure' % self.source_dir,
-                                  'enabled openssl           && { check_lib openssl/ssl.h SSL_library_init -lssl -lcrypto ||',
-                                  'enabled openssl           && { check_lib openssl/ssl.h OPENSSL_init_ssl -lssl -lcrypto -ldl ||')
+                                  '                               check_lib openssl openssl/ssl.h SSL_library_init -lssl -lcrypto ||',
+                                  '                               check_lib openssl openssl/ssl.h OPENSSL_init_ssl -lssl -lcrypto -ldl ||')
         else:
             tools.replace_in_file('%s/configure' % self.source_dir,
-                                  'enabled openssl           && { check_lib openssl/ssl.h SSL_library_init -lssl -lcrypto ||',
-                                  'enabled openssl           && { check_lib openssl/ssl.h OPENSSL_init_ssl -lssl -lcrypto ||')
+                                  '                               check_lib openssl openssl/ssl.h SSL_library_init -lssl -lcrypto ||',
+                                  '                               check_lib openssl openssl/ssl.h OPENSSL_init_ssl -lssl -lcrypto ||')
 
-        # https://b33p.net/kosada/node/15280
-        # http://git.videolan.org/?p=ffmpeg.git;a=patch;h=016387fe0fe3eff1a03ec0673bf4d2967f6cad94
-        tools.patch(patch_file='016387fe0fe3eff1a03ec0673bf4d2967f6cad94.patch', base_path=self.source_dir)
-
-        self.run('mv %s/LICENSE %s/%s.txt' % (self.source_dir, self.source_dir, self.name))
+        self.run('mv %s/LICENSE.md %s/%s.txt' % (self.source_dir, self.source_dir, self.name))
 
     def build(self):
         import VuoUtils
@@ -79,7 +75,6 @@ class FfmpegConan(ConanFile):
                 autotools.link_flags.append('-arch x86_64')
                 autotools.link_flags.append('-Wl,-headerpad_max_install_names')
                 autotools.link_flags.append('-Wl,-no_function_starts')
-                autotools.link_flags.append('-Wl,-no_version_load_command')
             elif platform.system() == 'Linux':
                 autotools.flags.append('-O4')
 
@@ -98,7 +93,7 @@ class FfmpegConan(ConanFile):
                                           '--disable-stripping',
                                           '--disable-static',
                                           '--enable-pthreads',
-                                          '--enable-yasm',
+                                          '--enable-x86asm',
                                           '--disable-debug',
                                           '--enable-demuxer=mpegts',
                                           '--enable-demuxer=mpegtsraw',
