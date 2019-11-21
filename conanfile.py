@@ -74,7 +74,6 @@ class FfmpegConan(ConanFile):
                 autotools.flags.append('-mmacosx-version-min=10.10')
                 autotools.link_flags.append('-arch x86_64')
                 autotools.link_flags.append('-Wl,-headerpad_max_install_names')
-                autotools.link_flags.append('-Wl,-no_function_starts')
             elif platform.system() == 'Linux':
                 autotools.flags.append('-O4')
 
@@ -100,13 +99,6 @@ class FfmpegConan(ConanFile):
                                           '--disable-bsfs',
                                           '--disable-devices',
                                           '--enable-openssl',
-
-                                          # Avoid CPU features unsupported on some systems Vuo runs on
-                                          '--disable-runtime-cpudetect',
-                                          '--disable-ssse3',
-                                          '--disable-sse4',
-                                          '--disable-sse42',
-                                          '--disable-avx',
 
                                           # Avoid patent-encumbered codecs
                                           '--disable-decoder=aac',
