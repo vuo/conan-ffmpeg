@@ -3,8 +3,10 @@ import platform
 
 class FfmpegTestConan(ConanFile):
     generators = 'cmake'
-
-    requires = 'llvm/3.3-5@vuo/stable'
+    requires = (
+        'llvm/5.0.2-1@vuo/stable',
+        'macos-sdk/11.0-0@vuo/stable',
+    )
 
     def build(self):
         cmake = CMake(self)

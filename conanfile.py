@@ -5,19 +5,28 @@ import platform
 class FfmpegConan(ConanFile):
     name = 'ffmpeg'
 
-    source_version = '4.2.1'
+    source_version = '4.3.1'
     package_version = '0'
     version = '%s-%s' % (source_version, package_version)
 
-    build_requires = 'llvm/3.3-5@vuo/stable', \
-                     'vuoutils/1.0@vuo/stable'
-    requires = 'openssl/1.1.1c-0@vuo/stable'
+    build_requires = (
+        'llvm/5.0.2-1@vuo/stable',
+        'macos-sdk/11.0-0@vuo/stable',
+        'vuoutils/1.2@vuo/stable',
+    )
+    requires = 'openssl/1.1.1h-0@vuo/stable'
     settings = 'os', 'compiler', 'build_type', 'arch'
     url = 'http://www.ffmpeg.org/'
     license = 'http://www.ffmpeg.org/legal.html'
     description = 'A cross-platform library for recording, converting, and streaming audio and video'
     source_dir = 'ffmpeg-%s' % source_version
-    build_dir = '_build'
+
+    build_x86_dir = '_build_x86'
+    build_arm_dir = '_build_arm'
+    install_x86_dir = '_install_x86'
+    install_arm_dir = '_install_arm'
+    install_universal_dir = '_install_universal_dir'
+
     libs = {
         'avcodec': 58,
         'avdevice': 58,
@@ -37,7 +46,7 @@ class FfmpegConan(ConanFile):
 
     def source(self):
         tools.get('http://www.ffmpeg.org/releases/ffmpeg-%s.tar.bz2' % self.source_version,
-                  sha256='682a9fa3f6864d7f0dbf224f86b129e337bc60286e0d00dffcd710998d521624')
+                  sha256='f4a4ac63946b6eee3bbdde523e298fca6019d048d6e1db0d1439a62cea65f0d9')
 
         # On both Linux and macOS, tell ./configure to check for the presence of OPENSSL_init_ssl
         # (instead of the removed-in-openssl-1.1 SSL_library_init).
@@ -56,74 +65,113 @@ class FfmpegConan(ConanFile):
 
     def build(self):
         import VuoUtils
-        tools.mkdir(self.build_dir)
-        with tools.chdir(self.build_dir):
-            autotools = AutoToolsBuildEnvironment(self)
 
-            # The LLVM/Clang libs get automatically added by the `requires` line,
-            # but this package doesn't need to link with them.
-            autotools.libs = []
+        autotools = AutoToolsBuildEnvironment(self)
 
-            autotools.flags.append('-I%s/include' % self.deps_cpp_info['openssl'].rootpath)
-            autotools.link_flags.append('-L%s/lib' % self.deps_cpp_info['openssl'].rootpath)
+        # The LLVM/Clang libs get automatically added by the `requires` line,
+        # but this package doesn't need to link with them.
+        autotools.libs = []
 
-            if platform.system() == 'Darwin':
-                autotools.flags.append('-Oz')
+        autotools.flags.append('-I%s/include' % self.deps_cpp_info['openssl'].rootpath)
+        autotools.link_flags.append('-L%s/lib' % self.deps_cpp_info['openssl'].rootpath)
+
+        if platform.system() == 'Darwin':
+            autotools.flags.append('-Oz')
+            autotools.flags.append('-isysroot %s' % self.deps_cpp_info['macos-sdk'].rootpath)
+            autotools.flags.append('-mmacosx-version-min=10.11')
+            autotools.link_flags.append('-mmacosx-version-min=10.11')
+            autotools.link_flags.append('-Wl,-headerpad_max_install_names')
+        elif platform.system() == 'Linux':
+            autotools.flags.append('-O4')
+
+        common_configure_args = [
+            '--disable-programs',
+            '--disable-doc',
+            '--enable-shared',
+            '--disable-stripping',
+            '--disable-static',
+            '--enable-pthreads',
+            '--disable-debug',
+            '--enable-demuxer=mpegts',
+            '--enable-demuxer=mpegtsraw',
+            '--disable-bsfs',
+            '--disable-devices',
+            '--enable-openssl',
+
+            # Avoid patented codecs.
+            '--disable-decoder=aac',
+            '--disable-decoder=aac_latm',
+            '--disable-encoder=aac',
+            '--disable-parser=aac',
+            '--disable-parser=aac_latm',
+            '--disable-demuxer=aac',
+            '--disable-decoder=mp3',
+            '--disable-decoder=mp3adu',
+            '--disable-decoder=mp3adufloat',
+            '--disable-decoder=mp3float',
+            '--disable-decoder=mp3on4',
+            '--disable-decoder=mp3on4float',
+            '--disable-demuxer=mp3',
+            '--disable-muxer=mp3',
+        ]
+
+        env_vars = {
+            'CC' : self.deps_cpp_info['llvm'].rootpath + '/bin/clang',
+            'CXX': self.deps_cpp_info['llvm'].rootpath + '/bin/clang++',
+        }
+        with tools.environment_append(env_vars):
+            build_root = os.getcwd()
+
+            self.output.info("=== Build for x86_64 ===")
+            tools.mkdir(self.build_x86_dir)
+            with tools.chdir(self.build_x86_dir):
                 autotools.flags.append('-arch x86_64')
-                autotools.flags.append('-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk')
-                autotools.flags.append('-mmacosx-version-min=10.10')
                 autotools.link_flags.append('-arch x86_64')
-                autotools.link_flags.append('-Wl,-headerpad_max_install_names')
-            elif platform.system() == 'Linux':
-                autotools.flags.append('-O4')
 
-            env_vars = {
-                'CC' : self.deps_cpp_info['llvm'].rootpath + '/bin/clang',
-                'CXX': self.deps_cpp_info['llvm'].rootpath + '/bin/clang++',
-            }
-            with tools.environment_append(env_vars):
                 autotools.configure(configure_dir='../%s' % self.source_dir,
                                     build=False,
                                     host=False,
-                                    args=[
-                                          '--disable-programs',
-                                          '--disable-doc',
-                                          '--enable-shared',
-                                          '--disable-stripping',
-                                          '--disable-static',
-                                          '--enable-pthreads',
-                                          '--enable-x86asm',
-                                          '--disable-debug',
-                                          '--enable-demuxer=mpegts',
-                                          '--enable-demuxer=mpegtsraw',
-                                          '--disable-bsfs',
-                                          '--disable-devices',
-                                          '--enable-openssl',
+                                    args=common_configure_args + [
+                                        '--prefix=%s/%s' % (build_root, self.install_x86_dir),
+                                        '--enable-x86asm'])
 
-                                          # Avoid patent-encumbered codecs
-                                          '--disable-decoder=aac',
-                                          '--disable-decoder=aac_latm',
-                                          '--disable-encoder=aac',
-                                          '--disable-parser=aac',
-                                          '--disable-parser=aac_latm',
-                                          '--disable-demuxer=aac',
-                                          '--disable-decoder=mp3',
-                                          '--disable-decoder=mp3adu',
-                                          '--disable-decoder=mp3adufloat',
-                                          '--disable-decoder=mp3float',
-                                          '--disable-decoder=mp3on4',
-                                          '--disable-decoder=mp3on4float',
-                                          '--disable-demuxer=mp3',
-                                          '--disable-muxer=mp3',
-
-                                          '--prefix=%s' % os.getcwd()])
                 autotools.make(args=['--quiet'])
                 autotools.make(target='install', args=['--quiet'])
-            with tools.chdir('lib'):
+            with tools.chdir('%s/lib' % self.install_x86_dir):
+                VuoUtils.fixLibs(self.libs, self.deps_cpp_info)
+
+            self.output.info("=== Build for arm64 ===")
+            tools.mkdir(self.build_arm_dir)
+            with tools.chdir(self.build_arm_dir):
+                autotools.flags.remove('-arch x86_64')
+                autotools.flags.append('-arch arm64')
+                autotools.link_flags.remove('-arch x86_64')
+                autotools.link_flags.append('-arch arm64')
+
+                autotools.configure(configure_dir='../%s' % self.source_dir,
+                                    build=False,
+                                    host=False,
+                                    args=common_configure_args + [
+                                        '--prefix=%s/%s' % (build_root, self.install_arm_dir),
+                                        '--enable-cross-compile',
+                                        '--disable-asm',
+                                        '--target-os=darwin',
+                                        '--arch=arm64'])
+
+                autotools.make(args=['--quiet'])
+                autotools.make(target='install', args=['--quiet'])
+            with tools.chdir('%s/lib' % self.install_arm_dir):
                 VuoUtils.fixLibs(self.libs, self.deps_cpp_info)
 
     def package(self):
-        self.copy('*.h', src='%s/include' % self.build_dir, dst='include')
+        import VuoUtils
+
+        tools.mkdir(self.install_universal_dir)
+        with tools.chdir(self.install_universal_dir):
+            for f in self.libs:
+                self.run('lipo -create ..//%s/lib/lib%s.dylib ../%s/lib/lib%s.dylib -output lib%s.dylib' % (self.install_x86_dir, f, self.install_arm_dir, f, f))
+
+        self.copy('*.h', src='%s/include' % self.install_x86_dir, dst='include')
 
         if platform.system() == 'Darwin':
             libext = 'dylib'
@@ -133,7 +181,7 @@ class FfmpegConan(ConanFile):
             raise Exception('Unknown platform "%s"' % platform.system())
 
         for f in list(self.libs.keys()):
-            self.copy('lib%s.%s' % (f, libext), src='%s/lib' % self.build_dir, dst='lib')
+            self.copy('lib%s.%s' % (f, libext), src=self.install_universal_dir, dst='lib')
 
         self.copy('%s.txt' % self.name, src=self.source_dir, dst='license')
 
