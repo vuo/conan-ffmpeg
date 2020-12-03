@@ -6,7 +6,7 @@ class FfmpegConan(ConanFile):
     name = 'ffmpeg'
 
     source_version = '4.3.1'
-    package_version = '0'
+    package_version = '1'
     version = '%s-%s' % (source_version, package_version)
 
     build_requires = (
@@ -79,7 +79,7 @@ class FfmpegConan(ConanFile):
             autotools.flags.append('-Oz')
             autotools.flags.append('-isysroot %s' % self.deps_cpp_info['macos-sdk'].rootpath)
             autotools.flags.append('-mmacosx-version-min=10.11')
-            autotools.link_flags.append('-mmacosx-version-min=10.11')
+            autotools.link_flags.append('-Wl,-macos_version_min,10.11')
             autotools.link_flags.append('-Wl,-headerpad_max_install_names')
         elif platform.system() == 'Linux':
             autotools.flags.append('-O4')
