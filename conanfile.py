@@ -5,16 +5,16 @@ import platform
 class FfmpegConan(ConanFile):
     name = 'ffmpeg'
 
-    source_version = '4.3.1'
-    package_version = '1'
+    source_version = '4.4'
+    package_version = '0'
     version = '%s-%s' % (source_version, package_version)
 
     build_requires = (
-        'llvm/5.0.2-1@vuo/stable',
-        'macos-sdk/11.0-0@vuo/stable',
-        'vuoutils/1.2@vuo/stable',
+        'llvm/5.0.2-1@vuo+conan+llvm/stable',
+        'macos-sdk/11.0-0@vuo+conan+macos-sdk/stable',
+        'vuoutils/1.2@vuo+conan+vuoutils/stable',
     )
-    requires = 'openssl/1.1.1h-0@vuo/stable'
+    requires = 'openssl/1.1.1h-0@vuo+conan+openssl/stable'
     settings = 'os', 'compiler', 'build_type', 'arch'
     url = 'http://www.ffmpeg.org/'
     license = 'http://www.ffmpeg.org/legal.html'
@@ -46,7 +46,7 @@ class FfmpegConan(ConanFile):
 
     def source(self):
         tools.get('http://www.ffmpeg.org/releases/ffmpeg-%s.tar.bz2' % self.source_version,
-                  sha256='f4a4ac63946b6eee3bbdde523e298fca6019d048d6e1db0d1439a62cea65f0d9')
+                  sha256='42093549751b582cf0f338a21a3664f52e0a9fbe0d238d3c992005e493607d0e')
 
         # On both Linux and macOS, tell ./configure to check for the presence of OPENSSL_init_ssl
         # (instead of the removed-in-openssl-1.1 SSL_library_init).
@@ -76,7 +76,7 @@ class FfmpegConan(ConanFile):
         autotools.link_flags.append('-L%s/lib' % self.deps_cpp_info['openssl'].rootpath)
 
         if platform.system() == 'Darwin':
-            autotools.flags.append('-Oz')
+            # autotools.flags.append('-Oz')  # Superseded by `--enable-small` below.
             autotools.flags.append('-isysroot %s' % self.deps_cpp_info['macos-sdk'].rootpath)
             autotools.flags.append('-mmacosx-version-min=10.11')
             autotools.link_flags.append('-Wl,-macos_version_min,10.11')
@@ -88,7 +88,7 @@ class FfmpegConan(ConanFile):
             '--disable-programs',
             '--disable-doc',
             '--enable-shared',
-            '--disable-stripping',
+            '--disable-stripping',  # Keep symbols during development; remove them during the final VuoPackageEditor/VuoPackageSDK step.
             '--disable-static',
             '--enable-pthreads',
             '--disable-debug',
@@ -97,6 +97,23 @@ class FfmpegConan(ConanFile):
             '--disable-bsfs',
             '--disable-devices',
             '--enable-openssl',
+
+            '--enable-small',  # Reduces library size by about 25%.
+            # '--enable-lto',  # No effect on library size.
+            # '--disable-runtime-cpudetect',  # No effect on library size.
+
+            # Disable unneeded features; reduces library size by about 20%.
+            '--disable-muxers',
+            '--disable-devices',
+            '--disable-filters',
+            '--disable-bzlib',
+            '--disable-iconv',
+            # Only enable the encoder needed for RTMP.
+            '--disable-encoders',
+            '--enable-encoder=h264',
+
+            # Use AVFoundation's hardware-accelerated H.264 decoder instead.
+            '--disable-decoder=h264',
 
             # Avoid patented codecs.
             '--disable-decoder=aac',
