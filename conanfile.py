@@ -111,7 +111,7 @@ class FfmpegConan(ConanFile):
             '--disable-iconv',
             # Only enable the encoder needed for RTMP.
             '--disable-encoders',
-            '--enable-encoder=h264',
+            '--enable-encoder=h264_videotoolbox',
 
             # Use AVFoundation's hardware-accelerated H.264 decoder instead.
             '--disable-decoder=h264',
@@ -162,9 +162,13 @@ class FfmpegConan(ConanFile):
             tools.mkdir(self.build_arm_dir)
             with tools.chdir(self.build_arm_dir):
                 autotools.flags.remove('-arch x86_64')
+                autotools.flags.remove('-mmacosx-version-min=10.11')
                 autotools.flags.append('-arch arm64')
+                autotools.flags.append('-target arm64-apple-macosx11.0.0')
                 autotools.link_flags.remove('-arch x86_64')
+                autotools.link_flags.remove('-Wl,-macos_version_min,10.11')
                 autotools.link_flags.append('-arch arm64')
+                autotools.link_flags.append('-target arm64-apple-macosx11.0.0')
 
                 autotools.configure(configure_dir='../%s' % self.source_dir,
                                     build=False,
