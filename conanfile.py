@@ -79,6 +79,7 @@ class FfmpegConan(ConanFile):
             # autotools.flags.append('-Oz')  # Superseded by `--enable-small` below.
             autotools.flags.append('-isysroot %s' % self.deps_cpp_info['macos-sdk'].rootpath)
             autotools.flags.append('-mmacosx-version-min=10.11')
+            autotools.link_flags.append('-isysroot %s' % self.deps_cpp_info['macos-sdk'].rootpath)
             autotools.link_flags.append('-Wl,-macos_version_min,10.11')
             autotools.link_flags.append('-Wl,-headerpad_max_install_names')
         elif platform.system() == 'Linux':
