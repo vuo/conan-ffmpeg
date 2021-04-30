@@ -6,7 +6,7 @@ class FfmpegConan(ConanFile):
     name = 'ffmpeg'
 
     source_version = '4.4'
-    package_version = '0'
+    package_version = '1'
     version = '%s-%s' % (source_version, package_version)
 
     build_requires = (
@@ -109,9 +109,10 @@ class FfmpegConan(ConanFile):
             '--disable-filters',
             '--disable-bzlib',
             '--disable-iconv',
-            # Only enable the encoder needed for RTMP.
             '--disable-encoders',
+            # Only enable the encoder/muxer needed for RTMP.
             '--enable-encoder=h264_videotoolbox',
+            '--enable-muxer=flv',
 
             # Use AVFoundation's hardware-accelerated H.264 decoder instead.
             '--disable-decoder=h264',
